@@ -6,45 +6,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 const numberWords = [
-  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-  "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
-  "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two",
-  "twenty-three", "twenty-four", "twenty-five", "twenty-six", "twenty-seven",
-  "twenty-eight", "twenty-nine", "thirty", "thirty-one", "thirty-two",
-  "thirty-three", "thirty-four", "thirty-five", "thirty-six", "thirty-seven",
-  "thirty-eight", "thirty-nine", "forty", "forty-one", "forty-two",
-  "forty-three", "forty-four", "forty-five", "forty-six", "forty-seven",
-  "forty-eight", "forty-nine", "fifty", "fifty-one", "fifty-two",
-  "fifty-three", "fifty-four", "fifty-five", "fifty-six", "fifty-seven",
-  "fifty-eight", "fifty-nine"
-];
-
-const openers = [
-  "A carrier bag flew into view",
-  "Gary tried a little rizz",
-  "UNO cards were spread between",
-  "Candice paused upon a clue",
-  "A pizza box began to lean",
-  "Pollok Park looked soft and green",
-  "A doorbell rang, the room withdrew",
-  "Alexandria’s pals came through",
-  "The kettle clicked, the mugs were due",
-  "Di Maggio’s lights were warm and true",
-  "Snoopy sensed a minor scene",
-  "A harmless leaf crossed the floor"
-];
-
-const closers = [
-  "Snoopy fled at {time}.",
-  "The kids said no at {time}.",
-  "Claims were made at {time}.",
-  "Coffee helped at {time}.",
-  "Pizza won at {time}.",
-  "Clues were chewed at {time}.",
-  "Chaos bloomed at {time}.",
-  "Glasgow smiled at {time}.",
-  "The house laughed loud at {time}.",
-  "Nothing happened at {time}."
+  "zero","one","two","three","four","five","six","seven","eight","nine",
+  "ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen",
+  "seventeen","eighteen","nineteen","twenty","twenty-one","twenty-two",
+  "twenty-three","twenty-four","twenty-five","twenty-six","twenty-seven",
+  "twenty-eight","twenty-nine","thirty","thirty-one","thirty-two",
+  "thirty-three","thirty-four","thirty-five","thirty-six","thirty-seven",
+  "thirty-eight","thirty-nine","forty","forty-one","forty-two",
+  "forty-three","forty-four","forty-five","forty-six","forty-seven",
+  "forty-eight","forty-nine","fifty","fifty-one","fifty-two",
+  "fifty-three","fifty-four","fifty-five","fifty-six","fifty-seven",
+  "fifty-eight","fifty-nine"
 ];
 
 function hourWord(hour) {
@@ -54,40 +26,53 @@ function hourWord(hour) {
 function timeToWords(time24) {
   const [hour, minute] = time24.split(":").map(Number);
 
-  if (minute === 0) {
-    return `${hourWord(hour)} o’clock`;
-  }
-
-  if (minute < 10) {
-    return `${hourWord(hour)} oh ${numberWords[minute]}`;
-  }
+  if (minute === 0) return `${hourWord(hour)} o'clock`;
+  if (minute < 10) return `${hourWord(hour)} oh ${numberWords[minute]}`;
 
   return `${hourWord(hour)} ${numberWords[minute]}`;
 }
 
 function getLondonTime() {
-  const formatter = new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false
-  });
-
-  return formatter.format(new Date());
+  }).format(new Date());
 }
 
 function pick(items, seed) {
   return items[Math.abs(seed) % items.length];
 }
 
+const poems = [
+  ["A carrier bag came into view", "Snoopy fled at {time}."],
+  ["A harmless leaf slid by the door", "Snoopy left at {time}."],
+  ["The room was calm, the air serene", "Snoopy worried at {time}."],
+  ["A doorbell made a tiny din", "Snoopy vanished at {time}."],
+  ["Gary said his jacket had rizz", "The kids said no at {time}."],
+  ["Gary tried to say 'no cap'", "The room went flat at {time}."],
+  ["Gary said his trainers were fire", "Eyes rolled hard at {time}."],
+  ["Gary claimed he came to slay", "Breakfast stopped at {time}."],
+  ["UNO cards were spread between", "Accusations at {time}."],
+  ["A draw-four caused a family row", "Justice waited at {time}."],
+  ["Pizza boxes stacked between", "Garlic breath at {time}."],
+  ["Di Maggio's called, the table gleamed", "Pizza won at {time}."],
+  ["Candice pondered one more clue", "Coffee cooled at {time}."],
+  ["A cryptic clue refused to bend", "Still no answer at {time}."],
+  ["Alexandria's pals came through", "The volume rose at {time}."],
+  ["The kettle clicked, the mugs were due", "PhD thoughts at {time}."],
+  ["Pollok Park was soft and green", "Cold noses out at {time}."],
+  ["Pollokshields sat under rain", "Still quite cosy at {time}."],
+];
+
 function makePoem(time24) {
   const [hour, minute] = time24.split(":").map(Number);
-  const seed = hour * 60 + minute + new Date().getDate();
+  const day = new Date().getDate();
+  const seed = hour * 60 + minute + day;
 
-  const opener = pick(openers, seed);
-  const closer = pick(closers, seed + 5).replace("{time}", timeToWords(time24));
-
-  return `${opener}, / ${closer}`;
+  const [line1, line2] = pick(poems, seed);
+  return `${line1}, / ${line2.replace("{time}", timeToWords(time24))}`;
 }
 
 app.get("/", (_req, res) => {
