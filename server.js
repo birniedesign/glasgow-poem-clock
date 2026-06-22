@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,181 +45,33 @@ function getLondonTime() {
   }).format(new Date());
 }
 
-function seedFrom(time24, salt = 0) {
+function loadPoems() {
+  const raw = fs.readFileSync("./poems.json", "utf8");
+  return JSON.parse(raw);
+}
+
+function pickPoem(poems, time24) {
   const [hour, minute] = time24.split(":").map(Number);
   const now = new Date();
 
-  return (
+  const seed =
     hour * 97 +
     minute * 31 +
     now.getDate() * 17 +
     (now.getMonth() + 1) * 13 +
-    now.getFullYear() +
-    salt
-  );
+    now.getFullYear();
+
+  return poems[Math.abs(seed) % poems.length];
 }
-
-function pick(items, seed) {
-  return items[Math.abs(seed) % items.length];
-}
-
-function renderPoem(lines, time24) {
-  const timeWords = timeToWords(time24);
-  return lines.map((line) => line.replaceAll("{time}", timeWords)).join(", / ");
-}
-
-const exactTimePoems = {
-  "07:03": [
-    "Good morning, it's {time}",
-    "Coffee for Candice, if you please."
-  ],
-  "12:01": [
-    "Gary, it is {time}",
-    "Time to get soup in your tum."
-  ],
-  "12:15": [
-    "Gary, it is {time}",
-    "Sausage rolls don't eat themselves."
-  ],
-  "15:10": [
-    "Gary, it is {time}",
-    "Take poor Snoopy for a pee."
-  ],
-  "15:30": [
-    "It is {time}",
-    "The kids are due, where will snacks be?"
-  ],
-  "15:35": [
-    "It is {time}",
-    "The snack requests arrive with glee."
-  ],
-  "15:45": [
-    "It is {time}",
-    "The snack negotiations begin to thrive."
-  ]
-};
-
-const categories = {
-  household: [
-    ["It is {time}", "The kettle knows just what to do."],
-    ["It is {time}", "The snack cupboard awaits inspection, you see."],
-    ["It is {time}", "Someone has asked for more."],
-    ["It is {time}", "The snack requests begin once more."],
-    ["It is {time}", "After-school snacks are the priority."]
-  ],
-
-  teaCoffee: [
-    ["It is {time}", "A biscuit and a brew will do."],
-    ["It is {time}", "Coffee for Candice, if you please."],
-    ["It is {time}", "The kettle knows exactly what to do."],
-    ["It is {time}", "Surely that's close enough for tea."],
-    ["It is {time}", "One more brew, then maybe more."]
-  ],
-
-  pancakesNutella: [
-    ["It is {time}", "Pancakes landed on the plate."],
-    ["It is {time}", "Nutella work is never done."],
-    ["It is {time}", "Nutella vanished from view."],
-    ["It is {time}", "Pancakes would be rather fine."],
-    ["It is {time}", "Nutella makes it feel like heaven."]
-  ],
-
-  candice: [
-    ["It is {time}", "Candice has another cryptic clue."],
-    ["It is {time}", "Coffee, crossword, one more clue."],
-    ["It is {time}", "A crossword clue still disagrees."],
-    ["It is {time}", "One clue left, maybe more."],
-    ["It is {time}", "Crossword time is looking fine."]
-  ],
-
-  alexandria: [
-    ["It is {time}", "Alexandria's pals arrive."],
-    ["It is {time}", "The front room is fully alive."],
-    ["It is {time}", "Snack discussions start, you see."],
-    ["It is {time}", "Pals, laughs, and snack-based tricks."],
-    ["It is {time}", "Someone's laughing through the door."]
-  ],
-
-  snoopy: [
-    ["It is {time}", "A carrier bag came into view."],
-    ["It is {time}", "Snoopy quietly withdrew."],
-    ["It is {time}", "A leaf appeared — emergency."],
-    ["It is {time}", "Snoopy suspects the kitchen floor."],
-    ["It is {time}", "Nothing happened. Snoopy's done."],
-    ["It is {time}", "Snoopy checked if he survived."]
-  ],
-
-  gym: [
-    ["It is {time}", "Time for reps and protein tricks."],
-    ["It is {time}", "Gym bag packed and feeling keen."],
-    ["It is {time}", "Weights won't lift themselves, mate."],
-    ["It is {time}", "One more set will do just fine."],
-    ["It is {time}", "Trainers on, no clever tricks."]
-  ],
-
-  phd: [
-    ["It is {time}", "A fresh idea came into view."],
-    ["It is {time}", "Another thought is breaking through."],
-    ["It is {time}", "Research questions multiply freely."],
-    ["It is {time}", "One paper opens three thoughts more."],
-    ["It is {time}", "Green exercise thoughts have begun."],
-    ["It is {time}", "That finding might be worth a line."]
-  ],
-
-  monteCristo: [
-    ["It is {time}", "Dantes knew what he must do."],
-    ["It is {time}", "A secret passage came into view."],
-    ["It is {time}", "The Count returns, eventually."],
-    ["It is {time}", "A hidden treasure, one clue more."],
-    ["It is {time}", "Revenge takes time, and that's just fine."]
-  ],
-
-  garyCringe: [
-    ["It is {time}", "Gary mentioned rizz."],
-    ["It is {time}", "Gary said the vibe was great."],
-    ["It is {time}", "Gary said drip. The silence grew."],
-    ["It is {time}", "Gary said slay. The kids said no way."],
-    ["It is {time}", "Gary tried Gen Z tricks."]
-  ],
-
-  poetic: [
-    ["It is {time}", "Rain makes Glasgow almost heaven."],
-    ["It is {time}", "The kitchen hums, the house alive."],
-    ["It is {time}", "The rain begins its song again."],
-    ["It is {time}", "The evening settles soft and slow."],
-    ["It is {time}", "The house is warm, the lights are low."]
-  ]
-};
-
-const categoryWeights = [
-  "household",
-  "household",
-  "household",
-  "teaCoffee",
-  "teaCoffee",
-  "pancakesNutella",
-  "pancakesNutella",
-  "candice",
-  "alexandria",
-  "snoopy",
-  "gym",
-  "phd",
-  "phd",
-  "monteCristo",
-  "garyCringe",
-  "poetic"
-];
 
 function makePoem(time24) {
-  if (exactTimePoems[time24]) {
-    return renderPoem(exactTimePoems[time24], time24);
-  }
+  const poems = loadPoems();
+  const selected = pickPoem(poems, time24);
 
-  const categoryName = pick(categoryWeights, seedFrom(time24, 101));
-  const category = categories[categoryName];
-  const selectedPoem = pick(category, seedFrom(time24, 503));
+  const line1 = `It's ${timeToWords(time24)}`;
+  const line2 = selected.line2;
 
-  return renderPoem(selectedPoem, time24);
+  return `${line1}, / ${line2}`;
 }
 
 app.get("/", (_req, res) => {
