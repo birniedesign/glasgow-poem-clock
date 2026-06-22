@@ -48,141 +48,133 @@ function pick(items, seed) {
   return items[Math.abs(seed) % items.length];
 }
 
-const household = [
-  ["Gary, it's twelve oh one", "Time to get soup in your tum."],
-  ["Gary, it's quarter past twelve", "Sausage rolls don't eat themselves."],
-  ["It's ten past three", "Take poor Snoopy for a pee."],
-  ["It's half past three", "The kids are due, where will snacks be?"],
-  ["Good morning, it's seven oh three", "Coffee for Candice, if you please."],
-  ["It's quarter past three", "After-school snacks are the priority."],
-  ["It's twenty past three", "The snack cupboard awaits inspection, you see."],
-  ["It's twenty-five to four", "Someone has asked for more."],
-  ["It's quarter to four", "The snack requests begin once more."],
-  ["It's ten past two", "A biscuit and a brew will do."]
+function makeSeed(time24) {
+  const [hour, minute] = time24.split(":").map(Number);
+  const now = new Date();
+  return hour * 60 + minute + now.getDate() * 17 + (now.getMonth() + 1) * 31;
+}
+
+const exactTimePoems = {
+  "07:03": [
+    "Good morning, it's {time}",
+    "Coffee for Candice, if you please."
+  ],
+  "12:01": [
+    "Gary, it is {time}",
+    "Time to get soup in your tum."
+  ],
+  "12:15": [
+    "Gary, it is {time}",
+    "Sausage rolls don't eat themselves."
+  ],
+  "15:10": [
+    "Gary, it is {time}",
+    "Take poor Snoopy for a pee."
+  ],
+  "15:30": [
+    "It is {time}",
+    "The kids are due, where will snacks be?"
+  ],
+  "15:35": [
+    "It is {time}",
+    "The snack requests arrive with glee."
+  ],
+  "15:45": [
+    "It is {time}",
+    "The snack negotiations begin to thrive."
+  ]
+};
+
+const templates = [
+  // Household / family
+  ["It is {time}", "The kettle knows just what to do."],
+  ["It is {time}", "A biscuit and a brew will do."],
+  ["It is {time}", "Coffee for Candice, if you please."],
+  ["It is {time}", "After-school snacks are the priority."],
+  ["It is {time}", "The snack cupboard awaits inspection, you see."],
+  ["It is {time}", "Someone has asked for more."],
+  ["It is {time}", "The snack requests begin once more."],
+
+  // Pancakes / Nutella
+  ["It is {time}", "Pancakes landed on the plate."],
+  ["It is {time}", "Nutella work is never done."],
+  ["It is {time}", "Nutella vanished from view."],
+  ["It is {time}", "Pancakes sound like tea to me."],
+  ["It is {time}", "Nutella makes it feel like heaven."],
+  ["It is {time}", "Pancakes would be rather fine."],
+
+  // Candice / crosswords
+  ["It is {time}", "Candice has another cryptic clue."],
+  ["It is {time}", "Coffee, crossword, one more clue."],
+  ["It is {time}", "A crossword clue still disagrees."],
+  ["It is {time}", "One clue left, maybe more."],
+  ["It is {time}", "Crossword time is looking fine."],
+
+  // Alexandria
+  ["It is {time}", "Alexandria's pals arrive."],
+  ["It is {time}", "The front room is fully alive."],
+  ["It is {time}", "Snack discussions start, you see."],
+  ["It is {time}", "Pals, laughs, and snack-based tricks."],
+  ["It is {time}", "Someone's laughing through the door."],
+
+  // Snoopy
+  ["It is {time}", "A carrier bag came into view."],
+  ["It is {time}", "Snoopy quietly withdrew."],
+  ["It is {time}", "Take poor Snoopy for a pee."],
+  ["It is {time}", "A leaf appeared — emergency."],
+  ["It is {time}", "Snoopy suspects the kitchen floor."],
+  ["It is {time}", "Nothing happened. Snoopy's done."],
+  ["It is {time}", "Snoopy checked if he survived."],
+
+  // Gym
+  ["It is {time}", "Time for reps and protein tricks."],
+  ["It is {time}", "Gym bag packed and feeling keen."],
+  ["It is {time}", "Weights won't lift themselves, mate."],
+  ["It is {time}", "One more set will do just fine."],
+  ["It is {time}", "Trainers on, no clever tricks."],
+
+  // PhD / research, positive not stressy
+  ["It is {time}", "A fresh idea came into view."],
+  ["It is {time}", "Another thought is breaking through."],
+  ["It is {time}", "Research questions multiply freely."],
+  ["It is {time}", "One paper opens three thoughts more."],
+  ["It is {time}", "Green exercise thoughts have begun."],
+  ["It is {time}", "That finding might be worth a line."],
+
+  // Count of Monte Cristo
+  ["It is {time}", "Dantes knew what he must do."],
+  ["It is {time}", "A secret passage came into view."],
+  ["It is {time}", "The Count returns, eventually."],
+  ["It is {time}", "A hidden treasure, one clue more."],
+  ["It is {time}", "Revenge takes time, and that's just fine."],
+
+  // Gary cringe
+  ["It is {time}", "Gary mentioned rizz."],
+  ["It is {time}", "Gary said the vibe was great."],
+  ["It is {time}", "Gary said drip. The silence grew."],
+  ["It is {time}", "Gary said slay. The kids said no way."],
+  ["It is {time}", "Gary tried Gen Z tricks."],
+
+  // Light poetic
+  ["It is {time}", "Rain makes Glasgow almost heaven."],
+  ["It is {time}", "The kitchen hums, the house alive."],
+  ["It is {time}", "The rain begins its song again."]
 ];
 
-const teaCoffee = [
-  ["It's quarter past three", "Put the kettle on for tea."],
-  ["It's twenty-two past two", "Time for a proper brew."],
-  ["It's half past one", "Tea and pancakes, anyone?"],
-  ["It's seven oh three", "Coffee for Candice, if you please."],
-  ["It's ten past two", "The kettle knows what to do."],
-  ["It's twenty past one", "Coffee first, then work gets done."],
-  ["It's quarter to three", "Surely that's close enough for tea."],
-  ["It's five past four", "One more brew, then maybe more."]
-];
-
-const pancakesNutella = [
-  ["It's quarter past eight", "Pancakes landed on the plate."],
-  ["It's half past one", "Nutella work is never done."],
-  ["It's twenty-two past two", "Nutella vanished from view."],
-  ["It's quarter past three", "Pancakes sound like tea to me."],
-  ["It's ten past eleven", "Nutella makes it feel like heaven."],
-  ["It's twenty-five past nine", "Pancakes would be rather fine."],
-  ["It's half past ten", "Nutella calls again."]
-];
-
-const candice = [
-  ["It's quarter past two", "Candice has another cryptic clue."],
-  ["It's twenty-two past two", "Coffee, crossword, one more clue."],
-  ["It's half past three", "A crossword clue still disagrees."],
-  ["It's quarter to four", "One clue left, maybe more."],
-  ["It's ten past nine", "Crossword time is looking fine."],
-  ["It's twenty past ten", "That clue is back again."]
-];
-
-const alexandria = [
-  ["It's quarter past five", "Alexandria's pals arrive."],
-  ["It's half past five", "The front room is fully alive."],
-  ["It's twenty-two past two", "Nutella vanished from view."],
-  ["It's ten past three", "Snack discussions start, you see."],
-  ["It's quarter to six", "Pals, laughs, and snack-based tricks."],
-  ["It's twenty past four", "Someone's laughing through the door."]
-];
-
-const snoopy = [
-  ["It's quarter past two", "A carrier bag came into view."],
-  ["It's twenty-two past two", "Snoopy quietly withdrew."],
-  ["It's ten past three", "Take poor Snoopy for a pee."],
-  ["It's quarter past three", "A leaf appeared — emergency."],
-  ["It's half past four", "Snoopy suspects the kitchen floor."],
-  ["It's twenty past one", "Nothing happened. Snoopy's done."],
-  ["It's quarter to five", "Snoopy checked if he survived."],
-  ["It's five past six", "Snoopy fears suspicious sticks."]
-];
-
-const gym = [
-  ["It's quarter past six", "Time for reps and protein tricks."],
-  ["It's half past seven", "Gym bag packed, feeling eleven."],
-  ["It's twenty past eight", "Weights won't lift themselves, mate."],
-  ["It's quarter to nine", "One more set will do just fine."],
-  ["It's ten past six", "Trainers on, no clever tricks."],
-  ["It's half past five", "The gym routine is still alive."]
-];
-
-const phd = [
-  ["It's quarter past two", "A fresh idea came into view."],
-  ["It's twenty-two past two", "Another thought is breaking through."],
-  ["It's half past three", "Research questions multiply freely."],
-  ["It's quarter to four", "One paper opens three thoughts more."],
-  ["It's ten past one", "Green exercise thoughts have begun."],
-  ["It's twenty past nine", "That finding might be worth a line."],
-  ["It's quarter past ten", "That paper's interesting again."]
-];
-
-const monteCristo = [
-  ["It's quarter past two", "Dantes knew what he must do."],
-  ["It's twenty-two past two", "A secret passage came into view."],
-  ["It's half past three", "The Count returns, eventually."],
-  ["It's quarter to four", "A hidden treasure, one clue more."],
-  ["It's ten past nine", "Revenge takes time, and that's just fine."]
-];
-
-const garyCringe = [
-  ["It's two oh six", "Gary mentioned rizz."],
-  ["It's quarter past eight", "Gary said the vibe was great."],
-  ["It's twenty past two", "Gary said drip. The silence grew."],
-  ["It's five past four", "Gary said slay. The kids said no more."],
-  ["It's ten past six", "Gary tried Gen Z tricks."],
-  ["It's quarter to nine", "Gary said fire. Nobody's fine."]
-];
-
-const poetic = [
-  ["It's quarter past seven", "Rain makes Glasgow almost heaven."],
-  ["It's half past eight", "The evening settles by the gate."],
-  ["It's twenty-two past two", "The grey sky turns a softer blue."],
-  ["It's quarter to five", "The kitchen hums, the house alive."],
-  ["It's ten past ten", "The rain begins its song again."]
-];
-
-const categories = [
-  ...household,
-  ...household,
-  ...household,
-  ...teaCoffee,
-  ...teaCoffee,
-  ...pancakesNutella,
-  ...pancakesNutella,
-  ...candice,
-  ...alexandria,
-  ...snoopy,
-  ...gym,
-  ...phd,
-  ...phd,
-  ...monteCristo,
-  ...garyCringe,
-  ...poetic
-];
+function renderPoem(lines, time24) {
+  const timeWords = timeToWords(time24);
+  return lines.map((line) => line.replace("{time}", timeWords)).join(", / ");
+}
 
 function makePoem(time24) {
-  const [hour, minute] = time24.split(":").map(Number);
-  const day = new Date().getDate();
-  const month = new Date().getMonth() + 1;
+  if (exactTimePoems[time24]) {
+    return renderPoem(exactTimePoems[time24], time24);
+  }
 
-  const seed = hour * 60 + minute + day * 17 + month * 31;
+  const seed = makeSeed(time24);
+  const selected = pick(templates, seed);
 
-  const [line1, line2] = pick(categories, seed);
-  return `${line1}, / ${line2}`;
+  return renderPoem(selected, time24);
 }
 
 app.get("/", (_req, res) => {
