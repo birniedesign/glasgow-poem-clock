@@ -48,96 +48,129 @@ function pick(items, seed) {
   return items[Math.abs(seed) % items.length];
 }
 
-const familyFunny = [
-  ["Gary said the jacket had some rizz", "The room said no at {time}."],
-  ["Gary tried a phrase too young", "Eyes rolled hard at {time}."],
-  ["Gary said the vibe was lit", "The children quit at {time}."],
-  ["A modern word escaped his face", "The house went still at {time}."],
-  ["Gary said no cap with pride", "Four souls sighed at {time}."]
+const household = [
+  ["Gary, it's twelve oh one", "Time to get soup in your tum."],
+  ["Gary, it's quarter past twelve", "Sausage rolls don't eat themselves."],
+  ["It's ten past three", "Take poor Snoopy for a pee."],
+  ["It's half past three", "The kids are due, where will snacks be?"],
+  ["Good morning, it's seven oh three", "Coffee for Candice, if you please."],
+  ["It's quarter past three", "After-school snacks are the priority."],
+  ["It's twenty past three", "The snack cupboard awaits inspection, you see."],
+  ["It's twenty-five to four", "Someone has asked for more."],
+  ["It's quarter to four", "The snack requests begin once more."],
+  ["It's ten past two", "A biscuit and a brew will do."]
 ];
 
-const snoopy = [
-  ["A carrier bag came into view", "Snoopy withdrew at {time}."],
-  ["A harmless leaf moved by the door", "Snoopy no more at {time}."],
-  ["The room was calm, the air serene", "Snoopy left the scene at {time}."],
-  ["A biscuit packet made a crack", "Snoopy stepped back at {time}."],
-  ["A cushion shifted on the floor", "Snoopy chose the door at {time}."]
+const teaCoffee = [
+  ["It's quarter past three", "Put the kettle on for tea."],
+  ["It's twenty-two past two", "Time for a proper brew."],
+  ["It's half past one", "Tea and pancakes, anyone?"],
+  ["It's seven oh three", "Coffee for Candice, if you please."],
+  ["It's ten past two", "The kettle knows what to do."],
+  ["It's twenty past one", "Coffee first, then work gets done."],
+  ["It's quarter to three", "Surely that's close enough for tea."],
+  ["It's five past four", "One more brew, then maybe more."]
+];
+
+const pancakesNutella = [
+  ["It's quarter past eight", "Pancakes landed on the plate."],
+  ["It's half past one", "Nutella work is never done."],
+  ["It's twenty-two past two", "Nutella vanished from view."],
+  ["It's quarter past three", "Pancakes sound like tea to me."],
+  ["It's ten past eleven", "Nutella makes it feel like heaven."],
+  ["It's twenty-five past nine", "Pancakes would be rather fine."],
+  ["It's half past ten", "Nutella calls again."]
 ];
 
 const candice = [
-  ["A cryptic clue refused to yield", "Still unrevealed at {time}."],
-  ["Coffee warm and crossword due", "One more clue at {time}."],
-  ["The crossword sat with quiet might", "One clue to fight at {time}."],
-  ["A clue looked simple, then it grew", "Not quite true at {time}."],
-  ["The pencil paused, the kettle blew", "Back to the clue at {time}."]
+  ["It's quarter past two", "Candice has another cryptic clue."],
+  ["It's twenty-two past two", "Coffee, crossword, one more clue."],
+  ["It's half past three", "A crossword clue still disagrees."],
+  ["It's quarter to four", "One clue left, maybe more."],
+  ["It's ten past nine", "Crossword time is looking fine."],
+  ["It's twenty past ten", "That clue is back again."]
 ];
 
 const alexandria = [
-  ["Alexandria's pals came through", "The volume grew at {time}."],
-  ["Nutella waited by the stack", "No turning back at {time}."],
-  ["A pancake landed warm and sweet", "A perfect treat at {time}."],
-  ["The group chat lit the room anew", "Laughter flew at {time}."],
-  ["Nutella spread from edge to edge", "A solemn pledge at {time}."]
+  ["It's quarter past five", "Alexandria's pals arrive."],
+  ["It's half past five", "The front room is fully alive."],
+  ["It's twenty-two past two", "Nutella vanished from view."],
+  ["It's ten past three", "Snack discussions start, you see."],
+  ["It's quarter to six", "Pals, laughs, and snack-based tricks."],
+  ["It's twenty past four", "Someone's laughing through the door."]
 ];
 
-const food = [
-  ["Di Maggio's called, the table gleamed", "Pizza dreamed at {time}."],
-  ["A garlic bread appeared between", "A family scene at {time}."],
-  ["The final slice sat looking proud", "Claims got loud at {time}."],
-  ["Pancakes rose in golden stacks", "No one relaxed at {time}."],
-  ["Nutella shone with quiet power", "Gone within the hour at {time}."]
-];
-
-const places = [
-  ["Pollok Park was soft and green", "A gentle scene at {time}."],
-  ["Pollokshields sat under rain", "Cosy again at {time}."],
-  ["The Glasgow sky turned silver-grey", "Still a good day at {time}."],
-  ["Rain tapped softly on the pane", "Home again at {time}."],
-  ["The trees stood quiet, dark and green", "A peaceful scene at {time}."]
-];
-
-const phdResearch = [
-  ["A paper opened something new", "A thought broke through at {time}."],
-  ["One question led to three or four", "Ideas wanted more at {time}."],
-  ["A finding glowed beneath the page", "Curiosity took the stage at {time}."],
-  ["A theory shifted into view", "Something grew at {time}."],
-  ["The data whispered, quiet and bright", "That feels right at {time}."]
-];
-
-const books = [
-  ["A prison wall, a hidden clue", "Dantes knew at {time}."],
-  ["The Count returned with patient grace", "Revenge took place at {time}."],
-  ["A treasure waited out of view", "The plot broke through at {time}."],
-  ["One more page, then maybe sleep", "Promises keep at {time}."],
-  ["A secret passage, dark and true", "The story grew at {time}."]
+const snoopy = [
+  ["It's quarter past two", "A carrier bag came into view."],
+  ["It's twenty-two past two", "Snoopy quietly withdrew."],
+  ["It's ten past three", "Take poor Snoopy for a pee."],
+  ["It's quarter past three", "A leaf appeared — emergency."],
+  ["It's half past four", "Snoopy suspects the kitchen floor."],
+  ["It's twenty past one", "Nothing happened. Snoopy's done."],
+  ["It's quarter to five", "Snoopy checked if he survived."],
+  ["It's five past six", "Snoopy fears suspicious sticks."]
 ];
 
 const gym = [
-  ["The weights were waiting, calm and still", "One more will at {time}."],
-  ["Another set, another rep", "One strong step at {time}."],
-  ["The gym bag waited by the door", "Back for more at {time}."],
-  ["Iron plates and steady pace", "A stronger place at {time}."],
-  ["The mirror knew, the playlist lied", "Still we tried at {time}."]
+  ["It's quarter past six", "Time for reps and protein tricks."],
+  ["It's half past seven", "Gym bag packed, feeling eleven."],
+  ["It's twenty past eight", "Weights won't lift themselves, mate."],
+  ["It's quarter to nine", "One more set will do just fine."],
+  ["It's ten past six", "Trainers on, no clever tricks."],
+  ["It's half past five", "The gym routine is still alive."]
+];
+
+const phd = [
+  ["It's quarter past two", "A fresh idea came into view."],
+  ["It's twenty-two past two", "Another thought is breaking through."],
+  ["It's half past three", "Research questions multiply freely."],
+  ["It's quarter to four", "One paper opens three thoughts more."],
+  ["It's ten past one", "Green exercise thoughts have begun."],
+  ["It's twenty past nine", "That finding might be worth a line."],
+  ["It's quarter past ten", "That paper's interesting again."]
+];
+
+const monteCristo = [
+  ["It's quarter past two", "Dantes knew what he must do."],
+  ["It's twenty-two past two", "A secret passage came into view."],
+  ["It's half past three", "The Count returns, eventually."],
+  ["It's quarter to four", "A hidden treasure, one clue more."],
+  ["It's ten past nine", "Revenge takes time, and that's just fine."]
+];
+
+const garyCringe = [
+  ["It's two oh six", "Gary mentioned rizz."],
+  ["It's quarter past eight", "Gary said the vibe was great."],
+  ["It's twenty past two", "Gary said drip. The silence grew."],
+  ["It's five past four", "Gary said slay. The kids said no more."],
+  ["It's ten past six", "Gary tried Gen Z tricks."],
+  ["It's quarter to nine", "Gary said fire. Nobody's fine."]
 ];
 
 const poetic = [
-  ["The evening settled, calm and blue", "The daylight flew at {time}."],
-  ["A quiet light moved through the room", "Softly bloomed at {time}."],
-  ["The rain drew rivers on the glass", "Minutes pass at {time}."],
-  ["The kettle sang, the shadows grew", "The day felt new at {time}."],
-  ["A small warm lamp held back the night", "All felt right at {time}."]
+  ["It's quarter past seven", "Rain makes Glasgow almost heaven."],
+  ["It's half past eight", "The evening settles by the gate."],
+  ["It's twenty-two past two", "The grey sky turns a softer blue."],
+  ["It's quarter to five", "The kitchen hums, the house alive."],
+  ["It's ten past ten", "The rain begins its song again."]
 ];
 
 const categories = [
-  ...familyFunny,
-  ...snoopy,
+  ...household,
+  ...household,
+  ...household,
+  ...teaCoffee,
+  ...teaCoffee,
+  ...pancakesNutella,
+  ...pancakesNutella,
   ...candice,
   ...alexandria,
-  ...food,
-  ...places,
-  ...phdResearch,
-  ...books,
+  ...snoopy,
   ...gym,
+  ...phd,
+  ...phd,
+  ...monteCristo,
+  ...garyCringe,
   ...poetic
 ];
 
@@ -149,7 +182,7 @@ function makePoem(time24) {
   const seed = hour * 60 + minute + day * 17 + month * 31;
 
   const [line1, line2] = pick(categories, seed);
-  return `${line1}, / ${line2.replace("{time}", timeToWords(time24))}`;
+  return `${line1}, / ${line2}`;
 }
 
 app.get("/", (_req, res) => {
@@ -161,14 +194,16 @@ app.get("/", (_req, res) => {
 });
 
 app.post("/api/v1/clock/status", (req, res) => {
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+
   res.json({
     success: true,
     device: {
       screenId: req.body?.screenId || "unknown",
       buildId: req.body?.buildId || null,
-      lastSeen: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+      lastSeen: now,
       seen: 1,
-      createdAt: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+      createdAt: now,
       isClaimed: true
     }
   });
