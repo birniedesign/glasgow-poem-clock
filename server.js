@@ -46,10 +46,6 @@ function getLondonTime() {
   }).format(new Date());
 }
 
-function loadPoems() {
-  return JSON.parse(fs.readFileSync("./poems.json", "utf8"));
-}
-
 function seedFrom(time24, salt = 0) {
   const [hour, minute] = time24.split(":").map(Number);
   const now = new Date();
@@ -59,6 +55,10 @@ function seedFrom(time24, salt = 0) {
 function pick(items, seed) {
   if (!items || items.length === 0) return null;
   return items[Math.abs(seed) % items.length];
+}
+
+function loadPoems() {
+  return JSON.parse(fs.readFileSync("./poems.json", "utf8"));
 }
 
 function makeFamilyPoem(time24) {
@@ -85,12 +85,21 @@ function ukTime(date) {
 
 function dayLabel(date) {
   const now = new Date();
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(now);
-  const target = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
+
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London"
+  }).format(now);
+
+  const target = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London"
+  }).format(date);
 
   const tomorrowDate = new Date(now);
   tomorrowDate.setDate(now.getDate() + 1);
-  const tomorrow = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(tomorrowDate);
+
+  const tomorrow = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London"
+  }).format(tomorrowDate);
 
   if (target === today) return "today";
   if (target === tomorrow) return "tomorrow";
@@ -108,14 +117,19 @@ function teamName(game, side) {
 }
 
 function cleanTeam(name) {
-  return name
+  return String(name)
     .replace("Democratic Republic of the Congo", "DR Congo")
     .replace("Czech Republic", "Czechia")
     .replace("Bosnia and Herzegovina", "Bosnia");
 }
 
+function cleanScore(value) {
+  if (value === null || value === undefined || value === "null") return "0";
+  return String(value);
+}
+
 function scoreLine(game) {
-  return `${cleanTeam(teamName(game, "home"))} ${game.home_score}-${game.away_score} ${cleanTeam(teamName(game, "away"))}`;
+  return `${game.home} ${cleanScore(game.home_score)}-${cleanScore(game.away_score)} ${game.away}`;
 }
 
 async function getGames() {
@@ -127,12 +141,28 @@ async function getGames() {
     date: parseEasternDate(game.local_date),
     home: cleanTeam(teamName(game, "home")),
     away: cleanTeam(teamName(game, "away")),
-    homeGoals: Number(game.home_score || 0),
-    awayGoals: Number(game.away_score || 0),
-    totalGoals: Number(game.home_score || 0) + Number(game.away_score || 0),
+    homeGoals: Number(cleanScore(game.home_score)),
+    awayGoals: Number(cleanScore(game.away_score)),
+    totalGoals: Number(cleanScore(game.home_score)) + Number(cleanScore(game.away_score)),
     isFinished: String(game.finished).toUpperCase() === "TRUE",
-    isStarted: game.time_elapsed && game.time_elapsed !== "notstarted"
+    isLive:
+      String(game.finished).toUpperCase() !== "TRUE" &&
+      game.time_elapsed &&
+      String(game.time_elapsed).toLowerCase() !== "notstarted"
   }));
+}
+
+function liveUpdate(games) {
+  const live = games.find((g) => g.isLive);
+
+  if (!live) return null;
+
+  const status =
+    String(live.time_elapsed).toLowerCase() === "live"
+      ? "live now"
+      : `${live.time_elapsed} mins`;
+
+  return `LIVE NOW, / ${scoreLine(live)}, ${status}.`;
 }
 
 function buildGroupTables(games) {
@@ -190,8 +220,9 @@ function topGroupTeams(table) {
 
 function upcomingUpdate(games) {
   const now = new Date();
+
   const upcoming = games
-    .filter((g) => !g.isFinished && g.date > now)
+    .filter((g) => !g.isFinished && !g.isLive && g.date > now)
     .sort((a, b) => a.date - b.date)[0];
 
   if (!upcoming) return null;
@@ -199,49 +230,20 @@ function upcomingUpdate(games) {
   return `COMING UP, / ${upcoming.home} v ${upcoming.away}, ${ukTime(upcoming.date)} ${dayLabel(upcoming.date)}.`;
 }
 
-function liveUpdate(games) {
-  const now = new Date();
-
-  const live = games.find((g) => {
-    const matchEndEstimate = new Date(g.date.getTime() + 2 * 60 * 60 * 1000);
-
-    return (
-      !g.isFinished &&
-      (
-        g.isStarted ||
-        (now >= g.date && now <= matchEndEstimate)
-      )
-    );
-  });
-
-  if (!live) return null;
-
-  const minute =
-    live.time_elapsed && live.time_elapsed !== "notstarted"
-      ? `${live.time_elapsed} mins`
-      : "live now";
-
-  return `LIVE NOW, / ${live.home} ${live.home_score}-${live.away_score} ${live.away}, ${minute}.`;
-}
-
-function recentResultUpdate(games) {
-  const recent = games
-    .filter((g) => g.isFinished)
-    .sort((a, b) => b.date - a.date)[0];
-
-  if (!recent) return null;
-
-  return `FULL TIME, / ${scoreLine(recent)}.`;
-}
-
 function todayGamesUpdate(games) {
   const now = new Date();
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(now);
+
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London"
+  }).format(now);
 
   const todayGames = games
     .filter((g) => {
-      const gameDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(g.date);
-      return gameDay === today && !g.isFinished;
+      const gameDay = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London"
+      }).format(g.date);
+
+      return gameDay === today && !g.isFinished && !g.isLive;
     })
     .sort((a, b) => a.date - b.date);
 
@@ -254,21 +256,21 @@ function todayGamesUpdate(games) {
 function scotlandWatchUpdate(games) {
   const now = new Date();
 
-  const liveScotland = games.find((g) =>
-    !g.isFinished &&
-    g.isStarted &&
-    (g.home === "Scotland" || g.away === "Scotland")
+  const liveScotland = games.find(
+    (g) => g.isLive && (g.home === "Scotland" || g.away === "Scotland")
   );
 
   if (liveScotland) {
-    return `SCOTLAND LIVE, / ${liveScotland.home} ${liveScotland.home_score}-${liveScotland.away_score} ${liveScotland.away}.`;
+    return `SCOTLAND LIVE, / ${scoreLine(liveScotland)}.`;
   }
 
   const nextScotland = games
-    .filter((g) =>
-      !g.isFinished &&
-      g.date > now &&
-      (g.home === "Scotland" || g.away === "Scotland")
+    .filter(
+      (g) =>
+        !g.isFinished &&
+        !g.isLive &&
+        g.date > now &&
+        (g.home === "Scotland" || g.away === "Scotland")
     )
     .sort((a, b) => a.date - b.date)[0];
 
@@ -285,6 +287,16 @@ function scotlandWatchUpdate(games) {
   }
 
   return null;
+}
+
+function recentResultUpdate(games) {
+  const recent = games
+    .filter((g) => g.isFinished)
+    .sort((a, b) => b.date - a.date)[0];
+
+  if (!recent) return null;
+
+  return `FULL TIME, / ${scoreLine(recent)}.`;
 }
 
 function biggestWinUpdate(games) {
@@ -312,7 +324,7 @@ function goalFestUpdate(games) {
 function bestAttackUpdate(games) {
   const goals = {};
 
-  for (const game of games.filter((g) => g.isFinished)) {
+  for (const game of games.filter((g) => g.isFinished || g.isLive)) {
     goals[game.home] = (goals[game.home] || 0) + game.homeGoals;
     goals[game.away] = (goals[game.away] || 0) + game.awayGoals;
   }
@@ -371,8 +383,8 @@ function unbeatenUpdate(games) {
   }
 
   for (const game of games.filter((g) => g.isFinished)) {
-    if (game.homeGoals > game.awayGoals) teams[game.away].lost += 1;
-    if (game.awayGoals > game.homeGoals) teams[game.home].lost += 1;
+    if (game.homeGoals > game.awayGoals && teams[game.away]) teams[game.away].lost += 1;
+    if (game.awayGoals > game.homeGoals && teams[game.home]) teams[game.home].lost += 1;
   }
 
   const unbeaten = Object.values(teams)
@@ -387,6 +399,7 @@ function unbeatenUpdate(games) {
 
 function knockoutCountdownUpdate(games) {
   const now = new Date();
+
   const knockout = games
     .filter((g) => g.type !== "group" && g.date > now)
     .sort((a, b) => a.date - b.date)[0];
@@ -397,33 +410,52 @@ function knockoutCountdownUpdate(games) {
   return `KNOCKOUTS, / Round of 32 starts in ${diffDays} days.`;
 }
 
-async function makeWorldCupUpdate(time24) {
-  try {
-    const games = await getGames();
+async function makeWorldCupUpdate(time24, games) {
+  const live = liveUpdate(games);
 
-    const live = liveUpdate(games);
-    if (live) return live;
+  if (live) return live;
 
-    const updateTypes = [
-      scotlandWatchUpdate,
-      todayGamesUpdate,
-      upcomingUpdate,
-      recentResultUpdate,
-      biggestWinUpdate,
-      goalFestUpdate,
-      bestAttackUpdate,
-      bestDefenceUpdate,
-      groupSnapshotUpdate,
-      unbeatenUpdate,
-      knockoutCountdownUpdate
-    ];
+  const updateTypes = [
+    scotlandWatchUpdate,
+    todayGamesUpdate,
+    upcomingUpdate,
+    recentResultUpdate,
+    biggestWinUpdate,
+    goalFestUpdate,
+    bestAttackUpdate,
+    bestDefenceUpdate,
+    groupSnapshotUpdate,
+    unbeatenUpdate,
+    knockoutCountdownUpdate
+  ];
+
+  const start = Math.abs(seedFrom(time24, 2000)) % updateTypes.length;
+
+  for (let i = 0; i < updateTypes.length; i++) {
+    const update = updateTypes[(start + i) % updateTypes.length](games);
+    if (update) return update;
+  }
+
+  return null;
+}
 
 async function makePoem(time24) {
-  const useWorldCup = WORLD_CUP_MODE && Math.abs(seedFrom(time24, 42)) % 10 < 8;
+  if (WORLD_CUP_MODE) {
+    try {
+      const games = await getGames();
 
-  if (useWorldCup) {
-    const update = await makeWorldCupUpdate(time24);
-    if (update) return update;
+      const live = liveUpdate(games);
+      if (live) return live;
+
+      const useWorldCup = Math.abs(seedFrom(time24, 42)) % 10 < 8;
+
+      if (useWorldCup) {
+        const update = await makeWorldCupUpdate(time24, games);
+        if (update) return update;
+      }
+    } catch {
+      // If the World Cup API fails, fall back to family poem.
+    }
   }
 
   return makeFamilyPoem(time24);
