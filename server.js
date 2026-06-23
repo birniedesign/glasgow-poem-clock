@@ -200,10 +200,28 @@ function upcomingUpdate(games) {
 }
 
 function liveUpdate(games) {
-  const live = games.find((g) => !g.isFinished && g.isStarted);
+  const now = new Date();
+
+  const live = games.find((g) => {
+    const matchEndEstimate = new Date(g.date.getTime() + 2 * 60 * 60 * 1000);
+
+    return (
+      !g.isFinished &&
+      (
+        g.isStarted ||
+        (now >= g.date && now <= matchEndEstimate)
+      )
+    );
+  });
+
   if (!live) return null;
 
-  return `LIVE NOW, / ${live.home} ${live.home_score}-${live.away_score} ${live.away}, ${live.time_elapsed}.`;
+  const minute =
+    live.time_elapsed && live.time_elapsed !== "notstarted"
+      ? `${live.time_elapsed} mins`
+      : "live now";
+
+  return `LIVE NOW, / ${live.home} ${live.home_score}-${live.away_score} ${live.away}, ${minute}.`;
 }
 
 function recentResultUpdate(games) {
@@ -383,8 +401,10 @@ async function makeWorldCupUpdate(time24) {
   try {
     const games = await getGames();
 
+    const live = liveUpdate(games);
+    if (live) return live;
+
     const updateTypes = [
-      liveUpdate,
       scotlandWatchUpdate,
       todayGamesUpdate,
       upcomingUpdate,
@@ -397,19 +417,6 @@ async function makeWorldCupUpdate(time24) {
       unbeatenUpdate,
       knockoutCountdownUpdate
     ];
-
-    const start = Math.abs(seedFrom(time24, 2000)) % updateTypes.length;
-
-    for (let i = 0; i < updateTypes.length; i++) {
-      const update = updateTypes[(start + i) % updateTypes.length](games);
-      if (update) return update;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 async function makePoem(time24) {
   const useWorldCup = WORLD_CUP_MODE && Math.abs(seedFrom(time24, 42)) % 10 < 8;
