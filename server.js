@@ -132,6 +132,31 @@ function scoreLine(game) {
   return `${game.home} ${cleanScore(game.home_score)}-${cleanScore(game.away_score)} ${game.away}`;
 }
 
+function cleanScorerName(text) {
+  return String(text)
+    .replace(/[{}"]/g, "")
+    .replace(/[“”]/g, "")
+    .replace(/,/g, "")
+    .trim();
+}
+
+function parseScorers(raw) {
+  if (!raw || raw === "null") return [];
+
+  return String(raw)
+    .replace(/[{}]/g, "")
+    .split("\",\"")
+    .map(cleanScorerName)
+    .filter(Boolean);
+}
+
+function scorerNameOnly(scorer) {
+  return scorer
+    .replace(/\s+\d.*$/, "")
+    .replace(/\s+\(OG\).*$/, "")
+    .trim();
+}
+
 async function getGames() {
   const response = await fetch(WORLDCUP_API);
   const data = await response.json();
@@ -144,6 +169,8 @@ async function getGames() {
     homeGoals: Number(cleanScore(game.home_score)),
     awayGoals: Number(cleanScore(game.away_score)),
     totalGoals: Number(cleanScore(game.home_score)) + Number(cleanScore(game.away_score)),
+    homeScorers: parseScorers(game.home_scorers),
+    awayScorers: parseScorers(game.away_scorers),
     isFinished: String(game.finished).toUpperCase() === "TRUE",
     isLive:
       String(game.finished).toUpperCase() !== "TRUE" &&
@@ -152,9 +179,12 @@ async function getGames() {
   }));
 }
 
-function liveUpdate(games) {
-  const live = games.find((g) => g.isLive);
+function liveGames(games) {
+  return games.filter((g) => g.isLive);
+}
 
+function liveScoreUpdate(games) {
+  const live = liveGames(games)[0];
   if (!live) return null;
 
   const status =
@@ -165,10 +195,43 @@ function liveUpdate(games) {
   return `LIVE NOW, / ${scoreLine(live)}, ${status}.`;
 }
 
-function buildGroupTables(games) {
+function liveGoalscorersUpdate(games) {
+  const live = liveGames(games)[0];
+  if (!live) return null;
+
+  const scorers = [...live.homeScorers, ...live.awayScorers].slice(-3);
+  if (!scorers.length) return liveScoreUpdate(games);
+
+  return `GOALSCORERS, / ${scorers.join(", ")}.`;
+}
+
+function lastGoalUpdate(games) {
+  const live = liveGames(games)[0];
+  if (!live) return null;
+
+  const scorers = [...live.homeScorers, ...live.awayScorers];
+  const last = scorers[scorers.length - 1];
+
+  if (!last) return liveScoreUpdate(games);
+
+  return `LAST GOAL, / ${last}.`;
+}
+
+function liveMomentumUpdate(games) {
+  const live = liveGames(games)[0];
+  if (!live) return null;
+
+  if (live.totalGoals >= 3) {
+    return `MOMENTUM, / ${live.totalGoals} goals already in ${live.home} v ${live.away}.`;
+  }
+
+  return `LIVE WATCH, / ${scoreLine(live)}.`;
+}
+
+function buildGroupTables(games, includeLive = false) {
   const tables = {};
 
-  for (const game of games.filter((g) => g.type === "group" && g.isFinished)) {
+  for (const game of games.filter((g) => g.type === "group" && (g.isFinished || (includeLive && g.isLive)))) {
     if (!tables[game.group]) tables[game.group] = {};
 
     for (const team of [game.home, game.away]) {
@@ -216,6 +279,53 @@ function topGroupTeams(table) {
   return Object.values(table)
     .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
     .slice(0, 3);
+}
+
+function liveGroupImpactUpdate(games) {
+  const live = liveGames(games)[0];
+  if (!live || live.type !== "group") return null;
+
+  const tables = buildGroupTables(games, true);
+  const table = tables[live.group];
+  if (!table) return null;
+
+  const top = topGroupTeams(table);
+  const leader = top[0];
+
+  if (!leader) return null;
+
+  return `LIVE TABLE, / ${leader.team} top Group ${live.group} on ${leader.pts} pts.`;
+}
+
+function qualificationUpdate(games) {
+  const tables = buildGroupTables(games, true);
+  const messages = [];
+
+  for (const [group, table] of Object.entries(tables)) {
+    const top = topGroupTeams(table);
+    for (const team of top.slice(0, 2)) {
+      if (team.played >= 2 && team.pts >= 4) {
+        messages.push(`QUALIFIED, / ${team.team} look set for R32.`);
+      }
+    }
+  }
+
+  return messages[0] || null;
+}
+
+function eliminationUpdate(games) {
+  const tables = buildGroupTables(games, true);
+  const messages = [];
+
+  for (const table of Object.values(tables)) {
+    for (const team of Object.values(table)) {
+      if (team.played >= 2 && team.pts === 0) {
+        messages.push(`OUT, / ${team.team} are in trouble.`);
+      }
+    }
+  }
+
+  return messages[0] || null;
 }
 
 function upcomingUpdate(games) {
@@ -289,6 +399,38 @@ function scotlandWatchUpdate(games) {
   return null;
 }
 
+function scotlandCountdownUpdate(games) {
+  const now = new Date();
+
+  const nextScotland = games
+    .filter(
+      (g) =>
+        !g.isFinished &&
+        g.date > now &&
+        (g.home === "Scotland" || g.away === "Scotland")
+    )
+    .sort((a, b) => a.date - b.date)[0];
+
+  if (!nextScotland) return null;
+
+  const hours = Math.max(1, Math.ceil((nextScotland.date - now) / (1000 * 60 * 60)));
+
+  return `COUNTDOWN, / ${hours} hours until ${nextScotland.home} v ${nextScotland.away}.`;
+}
+
+function scotlandGroupPositionUpdate(games) {
+  const tables = buildGroupTables(games, true);
+  const table = tables.C;
+  if (!table || !table.Scotland) return null;
+
+  const ranked = topGroupTeams(table);
+  const index = ranked.findIndex((t) => t.team === "Scotland");
+
+  if (index === -1) return `SCOTLAND WATCH, / Scotland are outside Group C top three.`;
+
+  return `SCOTLAND WATCH, / Scotland are ${index + 1}${index === 0 ? "st" : index === 1 ? "nd" : "rd"} in Group C.`;
+}
+
 function recentResultUpdate(games) {
   const recent = games
     .filter((g) => g.isFinished)
@@ -310,6 +452,16 @@ function biggestWinUpdate(games) {
   if (!biggest || biggest.margin === 0) return null;
 
   return `BIGGEST WIN, / ${scoreLine(biggest)}.`;
+}
+
+function biggestUpsetUpdate(games) {
+  const finished = games.filter((g) => g.isFinished && g.homeGoals !== g.awayGoals);
+  if (!finished.length) return null;
+
+  const oneNil = finished.find((g) => g.totalGoals === 1);
+  if (oneNil) return `UPSET ALERT, / ${scoreLine(oneNil)}.`;
+
+  return null;
 }
 
 function goalFestUpdate(games) {
@@ -356,7 +508,7 @@ function bestDefenceUpdate(games) {
 }
 
 function groupSnapshotUpdate(games) {
-  const tables = buildGroupTables(games);
+  const tables = buildGroupTables(games, true);
   const groupLetters = Object.keys(tables).sort();
   if (!groupLetters.length) return null;
 
@@ -369,7 +521,7 @@ function groupSnapshotUpdate(games) {
 }
 
 function unbeatenUpdate(games) {
-  const tables = buildGroupTables(games);
+  const tables = buildGroupTables(games, true);
   const teams = {};
 
   for (const group of Object.values(tables)) {
@@ -410,21 +562,84 @@ function knockoutCountdownUpdate(games) {
   return `KNOCKOUTS, / Round of 32 starts in ${diffDays} days.`;
 }
 
-async function makeWorldCupUpdate(time24, games) {
-  const live = liveUpdate(games);
+function goldenBootUpdate(games) {
+  const scorerCounts = {};
 
-  if (live) return live;
+  for (const game of games.filter((g) => g.isFinished || g.isLive)) {
+    for (const scorer of [...game.homeScorers, ...game.awayScorers]) {
+      if (scorer.includes("(OG)")) continue;
+      const name = scorerNameOnly(scorer);
+      if (!name) continue;
+      scorerCounts[name] = (scorerCounts[name] || 0) + 1;
+    }
+  }
+
+  const top = Object.entries(scorerCounts).sort((a, b) => b[1] - a[1])[0];
+  if (!top) return null;
+
+  return `GOLDEN BOOT, / ${top[0]} has ${top[1]} goals.`;
+}
+
+function topScorersUpdate(games) {
+  const scorerCounts = {};
+
+  for (const game of games.filter((g) => g.isFinished || g.isLive)) {
+    for (const scorer of [...game.homeScorers, ...game.awayScorers]) {
+      if (scorer.includes("(OG)")) continue;
+      const name = scorerNameOnly(scorer);
+      if (!name) continue;
+      scorerCounts[name] = (scorerCounts[name] || 0) + 1;
+    }
+  }
+
+  const top = Object.entries(scorerCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  if (!top.length) return null;
+
+  return `TOP SCORERS, / ${top.map(([name, goals]) => `${name} ${goals}`).join(", ")}.`;
+}
+
+async function makeWorldCupUpdate(time24, games) {
+  const live = liveGames(games);
+
+  if (live.length) {
+    const liveUpdates = [
+      liveScoreUpdate,
+      liveGoalscorersUpdate,
+      lastGoalUpdate,
+      liveMomentumUpdate,
+      liveGroupImpactUpdate,
+      qualificationUpdate,
+      eliminationUpdate
+    ];
+
+    const start = Math.abs(seedFrom(time24, 3000)) % liveUpdates.length;
+
+    for (let i = 0; i < liveUpdates.length; i++) {
+      const update = liveUpdates[(start + i) % liveUpdates.length](games);
+      if (update) return update;
+    }
+  }
 
   const updateTypes = [
     scotlandWatchUpdate,
+    scotlandCountdownUpdate,
+    scotlandGroupPositionUpdate,
     todayGamesUpdate,
     upcomingUpdate,
     recentResultUpdate,
+    groupSnapshotUpdate,
+    qualificationUpdate,
+    eliminationUpdate,
+    goldenBootUpdate,
+    topScorersUpdate,
     biggestWinUpdate,
+    biggestUpsetUpdate,
     goalFestUpdate,
     bestAttackUpdate,
     bestDefenceUpdate,
-    groupSnapshotUpdate,
     unbeatenUpdate,
     knockoutCountdownUpdate
   ];
@@ -444,8 +659,9 @@ async function makePoem(time24) {
     try {
       const games = await getGames();
 
-      const live = liveUpdate(games);
-      if (live) return live;
+      if (liveGames(games).length) {
+        return await makeWorldCupUpdate(time24, games);
+      }
 
       const useWorldCup = Math.abs(seedFrom(time24, 42)) % 10 < 8;
 
